@@ -72,7 +72,7 @@ public class BankRules {
 	
 	public double getFedInterest(){
 		
-		return new GetFedInterest().getFedInterest();
+		return new GetFedInterest(paymentScheme).getFedInterest();
 	}
 	
 	public double getInterestRateAccordingtoTerm(){

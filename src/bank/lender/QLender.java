@@ -38,26 +38,20 @@ public class QLender implements MessageListener {
 	private TopicConnection tConnection;
 	
 	
-	
-	
-	
 	public void setupTopicConnection(Context ctx) throws NamingException, JMSException{
 		
 		TopicConnectionFactory tFactory = (TopicConnectionFactory) ctx.lookup("ECSU.CSC360.TCF");
 		
 		tConnection = tFactory.createTopicConnection();
 
-		// Create the JMS Session
 		pubSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 		
 		Topic borrowTopic = (Topic)ctx.lookup("topic.loan.request");
 		
-//		subscriber = pubSession.createSubscriber(borrowTopic, null, true);
-		subscriber = pubSession.createDurableSubscriber(borrowTopic, "BankLender");
+		subscriber = pubSession.createDurableSubscriber(borrowTopic, "BankLender2");
 		
 		subscriber.setMessageListener(this);
 		
-		// Now that setup is complete, start the Connection
 		tConnection.start();
 		
 	}
@@ -122,6 +116,7 @@ public class QLender implements MessageListener {
 			loanReply.setJMSCorrelationID(message.getJMSMessageID());
 			
 			QueueSender qSender = qSession.createSender((Queue) message.getJMSReplyTo());
+			System.out.println("\nSending loan Request");
 			qSender.send(loanReply);
 
 			System.out.println("\nWaiting for loan requests...");
