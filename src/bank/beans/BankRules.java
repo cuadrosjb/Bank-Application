@@ -22,13 +22,19 @@ public class BankRules {
 	private LoanProposalData lpd;
 	
 	public BankRules(String borrower,double salary, double loanAmount, int paymentScheme){
+		System.out.println("borrower: "+ borrower+"\rsalary: "+ salary + "\rloanAmount: "+loanAmount+"\rpaymentScheme: "+paymentScheme);
+		
 		lpd = new LoanProposalData();
 		this.borrower = borrower;
 		this.loanAmount = loanAmount;
 		//this.salary = salary;
 		this.ratio = (salary/loanAmount);
 		this.paymentScheme = paymentScheme;
+		System.out.println("--0--");
+		
+		System.out.println("--1--");
 		this.fedInterest = getFedInterest();
+		System.out.println("--2--");
 	}
 
 	public LoanProposalData canWeMakeItWork(){
@@ -68,12 +74,20 @@ public class BankRules {
 				notSatisfied = false;
 			}
 		}
+		System.out.println("Returning new interest rate");
 		return newInterestRate;
 	}
 	
 	public double getFedInterest(){
-		
-		return new GetFedInterest(paymentScheme).getFedInterest();
+		GetFedInterest gfi = new GetFedInterest(paymentScheme);
+		double temp = 0.0;
+		while(true){
+			if(gfi.getFedInterest()!=0.0){
+				temp =gfi.getFedInterest();
+				break;
+			}
+		}
+		return temp;
 	}
 	
 	public double getInterestRateAccordingtoTerm(){

@@ -4,6 +4,10 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 public class LoanProposalData  implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private static final Logger Jlog = Logger.getLogger("LoanProposalData");
 	String _bankName = null;
 	double _loanAmount = 0.0;

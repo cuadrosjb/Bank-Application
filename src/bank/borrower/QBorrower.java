@@ -22,6 +22,8 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
@@ -119,7 +121,7 @@ public class QBorrower implements MessageListener {
 
 	private void sendLoanRequest(String borrower, double salary, double loanAmt, int paymentScheme) {
 		try {
-
+			System.out.println("borrower:"+borrower+"\rsalary:"+salary+"\rloanAmt:"+loanAmt+"\rpaymentScheme:"+paymentScheme);
 			MapMessage topicmsg = pubSession.createMapMessage();
 			topicmsg.setString("Borrower", borrower);
 			topicmsg.setDouble("Salary", salary);
@@ -174,17 +176,6 @@ public class QBorrower implements MessageListener {
 		       
 		    }
 			
-			
-			
-//			
-//			Message acceptLoan = qSession.createTextMessage("ACCEPT");
-//			
-//			acceptLoan.setJMSReplyTo(allLoanProposal.get(jmsMessageId).getJMSReplyTo());
-//			acceptLoan.setJMSMessageID(allLoanProposal.get(jmsMessageId).getJMSCorrelationID());
-//			msgProducer = qSession.createProducer(allLoanProposal.get(jmsMessageId).getJMSReplyTo());
-//			
-//			msgProducer.send(acceptLoan);
-			
 		}catch(Exception jms){
 			jms.printStackTrace();
 		}
@@ -193,18 +184,23 @@ public class QBorrower implements MessageListener {
 
 	@Override
 	public void onMessage(Message msg) {
-		
+		System.out.println("onMessage()");
 		try {
 			if(msg!=null){
 				if(msg instanceof  ObjectMessage){
 					System.out.println("---------------------------------------------------------------------------");
 					allLoanProposal.put(msg.getJMSMessageID(), msg);
-					((LoanProposalData)((ObjectMessage) msg).getObject()).toString();
+					System.out.println(msg.toString());
+					LoanProposalData lpd =  (LoanProposalData) ((ObjectMessage) msg).getObject();
+					System.out.println(lpd.toString());
 					System.out.println("If you want to accept this loan, please type \"" + msg.getJMSMessageID()+ "\"");
 					
 					System.out.println("---------------------------------------------------------------------------");
+				}else if (msg instanceof TextMessage){
+					       System.out.println(((TextMessage)msg).getText());
+						
 				}else{
-					System.out.println("Message could not be CAST...");
+					System.out.println(msg.toString());
 				}
 			}
 		} catch (JMSException e) {

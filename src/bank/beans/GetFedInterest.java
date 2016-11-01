@@ -25,14 +25,17 @@ public class GetFedInterest implements MessageListener {
 	private String fedTopic = "topic.fed.interest";
 	
 	private double fedInterest = 0.0;
-	private boolean loaded = false;
 	private int paymentScheme;
 	
 	public double getFedInterest(){
-		while(!loaded){	}
-		System.out.println("Returning the federal interest");
+		
 		return fedInterest;
 	}
+	
+	public void setFedInterest(double fedInterest){
+		this.fedInterest =fedInterest;
+	}
+	
 	
 	public GetFedInterest(int paymentScheme){
 		Context ctx;
@@ -85,13 +88,10 @@ public class GetFedInterest implements MessageListener {
                 }else{
                 	fedInterest = thirty_year_rate;
                 }
-           
+                System.out.println("fedInterest: " + fedInterest);
+                setFedInterest(fedInterest);
                 System.out.println("StreamMessage loaded " + millis);
-                loaded = true;
-			
-			
-            	
-            
+                
 		}catch(Exception e){
 			e.printStackTrace();
 		}

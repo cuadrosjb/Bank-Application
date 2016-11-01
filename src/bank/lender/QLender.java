@@ -94,10 +94,11 @@ public class QLender implements MessageListener {
 	}
 
 	public void onMessage(Message message) {
-
+		System.out.println("onMessage(message)");
 		try {
 				
 			if(message instanceof MapMessage){
+				//System.out.println("We are recieved a Loan Request!"+ message.get);
 				MapMessage msg = (MapMessage) message;
 				
 				ObjectMessage loanReply = qSession.createObjectMessage();
@@ -109,7 +110,7 @@ public class QLender implements MessageListener {
 						msg.getInt("PaymentScheme")).canWeMakeItWork();
 				
 				loanReply.setObject(loanProp);
-				
+				System.out.println(loanReply.toString());
 				allLoanProposals.put(message.getJMSMessageID(), loanProp);
 				
 				loanReply.setJMSExpiration(new Date().getTime() + 10000*60*60*24*7);
@@ -129,7 +130,11 @@ public class QLender implements MessageListener {
 				
 				
 			}else{
-				System.out.println("cannot cast JMS Message object...");
+				if(message!=null){
+					System.out.println(message.toString());
+				}else{
+					System.out.println("Message could not be CAST...");
+				}
 			}
 
 		} catch (JMSException jmse) {
