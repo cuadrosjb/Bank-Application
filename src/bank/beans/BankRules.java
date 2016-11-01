@@ -4,6 +4,7 @@ package bank.beans;
 public class BankRules {
 	
 	private static final String BANK_LAST_NAME = "CUADROS";
+	private static final String BANK_NAME = "CUADROS NATIONAL BANK";
 	private static final double MAX_INTEREST_RATE = .10;
 	private static final int MAX_AMOUNT_LIMIT = 500000;
 	private static final double MAX_SALARY_RATIO = 3.0;
@@ -31,7 +32,7 @@ public class BankRules {
 	}
 
 	public LoanProposalData canWeMakeItWork(){
-		lpd.setBankName(BANK_LAST_NAME);
+		lpd.setBankName(BANK_NAME);
 		lpd.setLoanAmount(loanAmount);
 				
 		if(loanAmount > MAX_AMOUNT_LIMIT){ 
@@ -60,9 +61,9 @@ public class BankRules {
 		
 		while(notSatisfied){
 			if(getInterestRateAccordingtoTerm() > MAX_INTEREST_RATE){
-				newInterestRate -= .01;  
+				newInterestRate -= .001;  
 			}else  if(getInterestRateAccordingtoTerm() < fedInterest){
-				newInterestRate += .01;  
+				newInterestRate += .001;  
 			}else{
 				notSatisfied = false;
 			}

@@ -4,18 +4,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
-import javax.jms.QueueReceiver;
 import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
@@ -26,67 +29,59 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import bank.beans.BankRules;
+import bank.beans.LoanProposalData;
 
 public class QLender implements MessageListener {
 
 	private QueueConnection qConnect = null;
 	private QueueSession qSession = null;
-	private Queue requestQ = null;
+
 	
-	private TopicSession pubSession;
+	private TopicSession subSession;
 	private TopicSubscriber subscriber;
 	private TopicConnection tConnection;
 	
+	private final static String TOPICCONNECTIONFACTION = "ECSU.CSC360.TCF";
+	private final static String QUEUECONNECTIONFACTION = "ECSU.CSC360.QCF";
+	private final static String LOANREQUEST = "topic.loan.request";
+	private final static String DURABLESUBSCRIBER = "bank.10253875";
+	
+	private Map<String, LoanProposalData> allLoanProposals;
+
 	
 	public void setupTopicConnection(Context ctx) throws NamingException, JMSException{
 		
-		TopicConnectionFactory tFactory = (TopicConnectionFactory) ctx.lookup("ECSU.CSC360.TCF");
+		TopicConnectionFactory tFactory = (TopicConnectionFactory) ctx.lookup(TOPICCONNECTIONFACTION);
 		
 		tConnection = tFactory.createTopicConnection();
 
-		pubSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+		subSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 		
-		Topic borrowTopic = (Topic)ctx.lookup("topic.loan.request");
+		Topic topic = (Topic)ctx.lookup(LOANREQUEST);
 		
-		subscriber = pubSession.createDurableSubscriber(borrowTopic, "BankLender2");
+		subscriber = subSession.createDurableSubscriber(topic, DURABLESUBSCRIBER);
 		
 		subscriber.setMessageListener(this);
 		
 		tConnection.start();
-		
 	}
-	
-	public void setupQueueConnection(String queuecf, Context ctx, String requestQueue) throws NamingException, JMSException{
-		
-		QueueConnectionFactory qFactory = (QueueConnectionFactory) ctx.lookup(queuecf);
-		
+
+	public void createQueueSession(Context ctx) throws NamingException, JMSException {
+
+		QueueConnectionFactory qFactory = (QueueConnectionFactory) ctx.lookup(QUEUECONNECTIONFACTION);
+
 		qConnect = qFactory.createQueueConnection();
 
-		// Create the JMS Session
 		qSession = qConnect.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
-		// Lookup the request queue
-		requestQ = (Queue) ctx.lookup(requestQueue);
-
-		// Now that setup is complete, start the Connection
-		qConnect.start();
-
-		// Create the message listener
-		QueueReceiver qReceiver = qSession.createReceiver(requestQ);
-
-		qReceiver.setMessageListener(this);
-
-		System.out.println("Waiting for loan requests...");
 	}
 	
 
-	public QLender(String queuecf, String requestQueue) {
+	public QLender() {
 		try {
-			/*Create a new topic subscriber and queue*/
-			
 			Context ctx = new InitialContext();
-			
-			setupQueueConnection(queuecf, ctx, requestQueue);
+			allLoanProposals = new HashMap<String, LoanProposalData>();
+			createQueueSession(ctx);
 			setupTopicConnection(ctx);
 
 		} catch (JMSException jmse) {
@@ -101,25 +96,41 @@ public class QLender implements MessageListener {
 	public void onMessage(Message message) {
 
 		try {
-			MapMessage msg = (MapMessage) message;
-			
-			Message loanReply = qSession.createObjectMessage();
-			
-			loanReply.setObjectProperty("LoanProposal", new BankRules(
-					msg.getString("Borrower"),
-					msg.getDouble("Salary"),
-					msg.getDouble("LoanAmount"),
-					msg.getInt("PaymentScheme")).canWeMakeItWork());
-			loanReply.setJMSExpiration(new Date().getTime() + 10000*60*60*24*7);
-
-
-			loanReply.setJMSCorrelationID(message.getJMSMessageID());
-			
-			QueueSender qSender = qSession.createSender((Queue) message.getJMSReplyTo());
-			System.out.println("\nSending loan Request");
-			qSender.send(loanReply);
-
-			System.out.println("\nWaiting for loan requests...");
+				
+			if(message instanceof MapMessage){
+				MapMessage msg = (MapMessage) message;
+				
+				ObjectMessage loanReply = qSession.createObjectMessage();
+				
+				LoanProposalData loanProp = new BankRules(
+						msg.getString("Borrower"),
+						msg.getDouble("Salary"),
+						msg.getDouble("LoanAmount"),
+						msg.getInt("PaymentScheme")).canWeMakeItWork();
+				
+				loanReply.setObject(loanProp);
+				
+				allLoanProposals.put(message.getJMSMessageID(), loanProp);
+				
+				loanReply.setJMSExpiration(new Date().getTime() + 10000*60*60*24*7);
+	
+	
+				loanReply.setJMSCorrelationID(message.getJMSMessageID());
+				
+				QueueSender qSender = qSession.createSender((Queue) message.getJMSReplyTo());
+				System.out.println("\nSending loan reply");
+				qSender.send(loanReply);
+	
+				System.out.println("\nWaiting for loan requests...");
+			}else if(message instanceof TextMessage){
+				System.out.println("This Proposal was " + ((TextMessage)message).getText());
+				allLoanProposals.get(message.getJMSCorrelationID()).toString();
+				System.out.println("--------------------END---------------------------------");
+				
+				
+			}else{
+				System.out.println("cannot cast JMS Message object...");
+			}
 
 		} catch (JMSException jmse) {
 			jmse.printStackTrace();
@@ -140,18 +151,13 @@ public class QLender implements MessageListener {
 	}
 
 	public static void main(String argv[]) {
-		String queuecf = null;
-		String requestq = null;
 
-		queuecf = "ECSU.CSC360.QCF";
-		requestq = "queue.10253875";
-
-		QLender lender = new QLender(queuecf, requestq);
+		QLender lender = new QLender();
 
 		try {
 			// Run until enter is pressed
 			BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
-			System.out.println("QLender application started");
+			System.out.println("Cuadros National Bank \rWaiting for requests...");
 			System.out.println("Press enter to quit application");
 			stdin.readLine();
 			lender.exit();

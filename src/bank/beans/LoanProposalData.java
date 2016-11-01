@@ -1,15 +1,10 @@
 package bank.beans;
 
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 public class LoanProposalData  implements Serializable {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	
-
-	//private static final Logger Jlog = Logger.getLogger("LoanProposalData");
+	private static final Logger Jlog = Logger.getLogger("LoanProposalData");
 	String _bankName = null;
 	double _loanAmount = 0.0;
 	int _paymentScheme = 1;  // 1, 2, 3, 4, 5, 7, 10, 30 year term
@@ -17,7 +12,7 @@ public class LoanProposalData  implements Serializable {
 	boolean _approved;
 	String _reason;
 	
-	public LoanProposalData() {
+	public void LoanProposalData() {
 		
 	}
 	
@@ -68,12 +63,14 @@ public class LoanProposalData  implements Serializable {
 	public boolean getApprovedFlag() {
 		return _approved;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "LoanProposalData [_bankName=" + _bankName + ", _loanAmount="
-				+ _loanAmount + ", _paymentScheme=" + _paymentScheme
-				+ ", _interestRate=" + _interestRate + ", _approved="
-				+ _approved + ", _reason=" + _reason + "]";
+		return "Bank Name: " + _bankName + "\rLoan Amount: " + _loanAmount + "$\rPayment Scheme: "
+				+ _paymentScheme + "\rInterest Rate: " + _interestRate*100 + "%\r Approved: " + _approved + "\r Reason(s): \n"
+				+ _reason;
 	}
+	
+	
+	
 }

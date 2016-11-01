@@ -30,6 +30,7 @@ public class GetFedInterest implements MessageListener {
 	
 	public double getFedInterest(){
 		while(!loaded){	}
+		System.out.println("Returning the federal interest");
 		return fedInterest;
 	}
 	
@@ -85,7 +86,7 @@ public class GetFedInterest implements MessageListener {
                 	fedInterest = thirty_year_rate;
                 }
            
-                System.out.println("millis: " + millis);
+                System.out.println("StreamMessage loaded " + millis);
                 loaded = true;
 			
 			
